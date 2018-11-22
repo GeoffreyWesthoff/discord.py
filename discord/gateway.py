@@ -390,6 +390,7 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
             self._trace = trace = data.get('_trace', [])
             log.info('Shard ID %s has successfully RESUMED session %s under trace %s.',
                      self.shard_id, self.session_id, ', '.join(trace))
+            data['shard_id'] = self.shard_id
 
         parser = 'parse_' + event.lower()
 
@@ -446,6 +447,7 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
             msg = await self.recv()
             await self.received_message(msg)
         except websockets.exceptions.ConnectionClosed as e:
+            self._dispatch('shard_disconnect', self.shard_id)
             if self._can_handle_close(e.code):
                 log.info('Websocket closed with %s (%s), attempting a reconnect.', e.code, e.reason)
                 raise ResumeWebSocket(self.shard_id) from e

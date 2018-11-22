@@ -352,7 +352,7 @@ class ConnectionState:
         self._ready_task = asyncio.ensure_future(self._delay_ready(), loop=self.loop)
 
     def parse_resumed(self, data):
-        self.dispatch('resumed')
+        self.dispatch('resumed', data['shard_id'])
 
     def parse_message_create(self, data):
         channel, _ = self._get_guild_channel(data)
@@ -930,7 +930,7 @@ class AutoShardedConnectionState(ConnectionState):
             except asyncio.TimeoutError:
                 log.info('Somehow timed out waiting for chunks.')
 
-    async def _delay_ready(self):
+    async def _delay_ready(self, shard_id):
         launch = self._ready_state.launch
         while not launch.is_set():
             # this snippet of code is basically waiting 2 seconds
@@ -971,7 +971,7 @@ class AutoShardedConnectionState(ConnectionState):
 
         # dispatch the event
         self.call_handlers('ready')
-        self.dispatch('ready')
+        self.dispatch('ready', shard_id)
 
     def parse_ready(self, data):
         if not hasattr(self, '_ready_state'):
@@ -989,6 +989,6 @@ class AutoShardedConnectionState(ConnectionState):
             factory, _ = _channel_factory(pm['type'])
             self._add_private_channel(factory(me=self.user, data=pm, state=self))
 
-        self.dispatch('connect')
+        self.dispatch('connect', data['shard'][0])
         if self._ready_task is None:
-            self._ready_task = asyncio.ensure_future(self._delay_ready(), loop=self.loop)
+            self._ready_task = asyncio.ensure_future(self._delay_ready(data['shard'][0]), loop=self.loop)
