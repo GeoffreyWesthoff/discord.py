@@ -181,6 +181,9 @@ class Command:
         self._buckets = CooldownMapping(kwargs.get('cooldown'))
         self._before_invoke = None
         self._after_invoke = None
+        for name, data in kwargs.items():
+             if not hasattr(self, name):
+                  setattr(self, name, data)
 
     @property
     def callback(self):
